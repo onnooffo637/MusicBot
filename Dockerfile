@@ -1,21 +1,19 @@
-# نستخدم نسخة بايثون خفيفة ومستقرة
-FROM python:3.10-slim-buster
+FROM python:3.10-slim-bookworm
 
-# تحديث النظام وتنزيل FFmpeg (مهم جداً للصوت) و Git
-RUN apt-get update && apt-get install -y ffmpeg git && apt-get clean
+# تحديث النظام
+RUN apt-get update && \
+    apt-get install -y ffmpeg git build-essential && \
+    rm -rf /var/lib/apt/lists/*
 
-# إعداد مجلد العمل
 WORKDIR /app
 
-# نسخ ملف المتطلبات وتنزيل المكاتب
-COPY requirements.txt requirements.txt
-RUN pip3 install --no-cache-dir -r requirements.txt
+# تحديث pip لأحدث نسخة (مهم جداً لحل التعارض)
+RUN pip install --upgrade pip
 
-# نسخ باقي ملفات البوت
+# نسخ المتطلبات وتنزيلها
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# نسخ باقي الملفات وتشغيل البوت
 COPY . .
-
-# فتح البورت للسيرفر الوهمي (عشان ريندر يشوفه)
-EXPOSE 8080
-
-# أمر التشغيل
-CMD ["python3", "main.py"]
+CMD ["python", "main.py"]
