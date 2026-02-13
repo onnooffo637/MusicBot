@@ -12,9 +12,10 @@ from aiohttp import web
 api_id_env = os.environ.get("API_ID", "0")
 print(f"DEBUG: API_ID is set to: {api_id_env}") 
 
-API_ID = int(api_id_env)
-API_HASH = os.environ.get("API_HASH", "")
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
+API_ID = int(os.getenv("API_ID"))
+API_HASH = os.getenv("API_HASH")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
 
 # --- 2. إعداد البوت (التعديل: التشغيل في الذاكرة) ---
 app = Client(
@@ -114,3 +115,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
