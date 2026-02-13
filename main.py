@@ -7,29 +7,24 @@ from pytgcalls.types import MediaStream
 import yt_dlp
 from aiohttp import web
 
-# --- 1. التأكد من المتغيرات ---
-# هنا بنطبع رسالة في اللوج عشان نتأكد إن البيانات مقروءة صح
-api_id_env = os.environ.get("API_ID", "0")
-print(f"DEBUG: API_ID is set to: {api_id_env}") 
+# --- 1. المتغيرات ---
+API_ID = int(os.environ.get("API_ID", 0))
+API_HASH = os.environ.get("API_HASH", "")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 
-API_ID = int(os.getenv("API_ID"))
-API_HASH = os.getenv("API_HASH")
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-
-
-# --- 2. إعداد البوت (التعديل: التشغيل في الذاكرة) ---
+# --- 2. إعداد البوت ---
 app = Client(
-    "music_bot",
+    "music_bot_railway",
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
-    in_memory=True # <--- ده بيحل مشاكل كتير في سيرفرات دوكر
+    in_memory=True
 )
 call_py = PyTgCalls(app)
 
 # --- 3. السيرفر الوهمي ---
 async def web_handler(request):
-    return web.Response(text="Bot is Running High Quality! 🎵")
+    return web.Response(text="Bot is Alive & Running! 🟢")
 
 async def start_web_server():
     server = web.Application()
@@ -50,7 +45,6 @@ async def download_and_play(query, chat_id):
         'outtmpl': '%(id)s.%(ext)s',
         'postprocessors': [{'key': 'FFmpegExtractAudio','preferredcodec': 'mp3','preferredquality': '192',}],
     }
-    
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             info = ydl.extract_info(f"ytsearch:{query}", download=False)['entries'][0]
@@ -58,10 +52,19 @@ async def download_and_play(query, chat_id):
             if not os.path.exists(file_path):
                 ydl.download([info['webpage_url']])
             return file_path, info['title'], info['thumbnail'], info['duration']
-        except Exception as e:
+        except Exception:
             return None, None, None, None
 
-# --- 5. الأوامر ---
+# --- 5. ميزة "هنا" (Alive Check) ---
+# أول ما تكتب "هنا" في الجروب، يرد عليك
+@app.on_message(filters.regex("^هنا$") & filters.group)
+async def im_here(client, message):
+    await message.reply_text(
+        "**✅ أيوة يا ريس، أنا موجود وشغال 100% 🚀**\n\n"
+        "اكتب `/play` واسم اللي عايز تسمعه."
+    )
+
+# --- 6. أوامر التشغيل ---
 @app.on_message(filters.command("play") & filters.group)
 async def play_music(client, message):
     if not message.reply_to_message and len(message.command) < 2:
@@ -86,7 +89,7 @@ async def play_music(client, message):
 
         await message.reply_photo(
             photo=thumbnail,
-            caption=f"💿 **تم التشغيل!**\n🎵 `{title}`",
+            caption=f"💿 **تم التشغيل!**\n🎵 `{title}`\n⏱ المدة: {duration} ثانية",
             reply_markup=buttons
         )
         await m.delete()
@@ -103,16 +106,21 @@ async def callbacks(client, callback_query):
         except:
             pass
 
-# --- 6. التشغيل ---
+# --- 7. التشغيل وإشعار البداية ---
 async def main():
     await start_web_server()
-    print("🚀 Starting Pyrogram Client...")
+    print("🚀 Starting Bot...")
     await app.start()
-    print("🚀 Starting PyTgCalls...")
     await call_py.start()
-    print("✅ Bot Started Successfully!")
+    
+    # إشعار التشغيل (بيتبعت في Saved Messages ليك أنت بس)
+    try:
+        await app.send_message("me", "✅ **البوت اشتغل دلوقتي وجاهز للعمل!** 🟢")
+    except:
+        pass # لو معرفش يبعت ليك مش مشكلة
+
+    print("✅ Bot Started & Ready!")
     await asyncio.Event().wait()
 
 if __name__ == "__main__":
     asyncio.run(main())
-
