@@ -1,19 +1,21 @@
 FROM python:3.10-slim-bookworm
 
-# تحديث النظام
+# تحديث النظام وتنزيل FFmpeg
 RUN apt-get update && \
     apt-get install -y ffmpeg git build-essential && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# تحديث pip لأحدث نسخة (مهم جداً لحل التعارض)
+# تحديث pip
 RUN pip install --upgrade pip
 
-# نسخ المتطلبات وتنزيلها
+# تنزيل المكتبات
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# نسخ باقي الملفات وتشغيل البوت
+# نقل الملفات
 COPY . .
+
+# أمر التشغيل
 CMD ["python", "main.py"]
